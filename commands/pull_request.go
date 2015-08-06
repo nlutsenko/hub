@@ -14,7 +14,7 @@ import (
 var cmdPullRequest = &Command{
 	Run:   pullRequest,
   Key:   "pr",
-	Usage: "pull-request [-f] [-m <MESSAGE>|-F <FILE>|-i <ISSUE>|<ISSUE-URL>] [-o] [-b <BASE>] [-h <HEAD>] [-a <USER>]",
+	Usage: "pr [-f] [-m <MESSAGE>|-F <FILE>|-i <ISSUE>|<ISSUE-URL>] [-o] [-b <BASE>] [-h <HEAD>] [-a <USER>]",
 	Short: "Open a pull request on GitHub",
 	Long: `Opens a pull request on GitHub for the project that the "origin" remote
 points to. The default head of the pull request is the current branch.
@@ -42,6 +42,7 @@ var (
 	flagPullRequestIssue,
 	flagPullRequestMessage,
 	flagPullRequestAssignee,
+  flagPullRequestLabels,
 	flagPullRequestFile string
 	flagPullRequestBrowse,
 	flagPullRequestForce bool
@@ -56,6 +57,7 @@ func init() {
 	cmdPullRequest.Flag.BoolVarP(&flagPullRequestForce, "force", "f", false, "FORCE")
 	cmdPullRequest.Flag.StringVarP(&flagPullRequestFile, "file", "F", "", "FILE")
 	cmdPullRequest.Flag.StringVarP(&flagPullRequestAssignee, "assign", "a", "", "USER")
+	cmdPullRequest.Flag.StringVarP(&flagPullRequestAssignee, "labels", "l", "", "LABELS")
 
 	CmdRunner.Use(cmdPullRequest)
 }
@@ -216,8 +218,12 @@ func pullRequest(cmd *Command, args *Args) {
 
 		pullRequestURL = pr.HTMLURL
 
-		if flagPullRequestAssignee != "" {
-			err = client.UpdateIssueAssignee(baseProject, pr.Number, flagPullRequestAssignee)
+		if flagPullRequestAssignee != "" || flagPullRequestLabels != "" {
+      params := octokit.IssueParams{
+      				Assignee:  flagPullRequestAssignee,
+              Labels:    strings.Split(flagPullRequestLabels, ","),
+      }
+			err = client.UpdateIssue(baseProject, pr.Number, params)
 			utils.Check(err)
 		}
 	}
